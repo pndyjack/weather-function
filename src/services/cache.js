@@ -1,24 +1,27 @@
 /* eslint-disable import/prefer-default-export */
-import dotenv from 'dotenv';
-import faunadb, { query as q } from 'faunadb';
+import faunadb from 'faunadb';
 
-dotenv.config();
-
-export async function saveToCache(data) {
-  const client = new faunadb.Client({ secret: process.env.FAUNA_DB_KEY });
-  const createP = client.query(q.Create(q.Collection('forecast'), { data }));
-  createP.then(r => {
-    console.log(r);
-  });
+export async function saveToCache(data, dbKey) {
+  const q = faunadb.query;
+  const client = new faunadb.Client({ secret: dbKey });
+  const result = client.query(q.Create(q.Collection('forecast'), { data }));
+  result
+    .then((res) => {
+      console.debug(res);
+    })
+    .catch((err) => console.debug(err));
 }
 
-export async function getFromCache() {
-  const x = q.Map(
-    q.Paginate(
-      q.Match(q.Index('forecast_sort_by_timestamp_desc')),
-      { size: 1 },
+export async function getFromCache(dbKey) {
+  const client = new faunadb.Client({ secret: dbKey });
+  const q = faunadb.query;
+  const result = client.query(
+    q.Map(
+      q.Paginate(q.Match(q.Index('forecast_sort_by_timestamp_desc')), {
+        size: 1,
+      }),
       q.Lambda(['timestamp', 'ref'], q.Get(q.Var('ref'))),
     ),
   );
-  x.then(r => console.log(r));
+  result.then((res) => console.debug(res)).catch((err) => console.debug(err));
 }

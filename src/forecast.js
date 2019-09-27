@@ -7,7 +7,7 @@ import { getFromCache, saveToCache } from './services/cache';
 dotenv.config();
 
 async function getFromCacheIfFresh({ lastResponseKey, maxFreshnessInterval }) {
-  const lastResponse = await getFromCache();
+  const lastResponse = await getFromCache(process.env.FAUNA_DB_KEY);
   if (lastResponse && lastResponse.currently && lastResponse.currently.time) {
     // Get last response's date from UNIX timestamp
     const lastRespDate = new Date(lastResponse.currently.time * 1000);
@@ -43,7 +43,7 @@ export async function handler(event, _context) {
     const data = await fetchFreshResult({ lat, long });
 
     // Save to cache
-    await saveToCache(data);
+    await saveToCache(data, process.env.FAUNA_DB_KEY);
 
     return {
       statusCode: 200,
