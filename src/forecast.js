@@ -20,6 +20,7 @@ async function getFromCacheIfFresh({ client, maxFreshnessInterval }) {
   return lastResponse;
 }
 
+// eslint-disable-next-line func-names
 exports.handler = async function (event, _context) {
   try {
     const client = new faunadb.Client({ secret: process.env.FAUNA_DB_KEY });
