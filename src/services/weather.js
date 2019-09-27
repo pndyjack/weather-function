@@ -8,5 +8,6 @@ export async function fetchFreshResult({ lat, long }) {
       headers: { Accept: 'application/json' },
     },
   );
-  return response.data;
+  const { data } = response;
+  return { timestamp: data.currently.time, ...data };
 }

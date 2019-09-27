@@ -1,13 +1,24 @@
 /* eslint-disable import/prefer-default-export */
-import storage from 'node-persist';
-import os from 'os';
+import dotenv from 'dotenv';
+import faunadb, { query as q } from 'faunadb';
 
-export async function saveToCache({ key, data }) {
-  await storage.init({ dir: os.homedir() });
-  await storage.setItem(key, data);
+dotenv.config();
+
+export async function saveToCache(data) {
+  const client = new faunadb.Client({ secret: process.env.FAUNA_DB_KEY });
+  const createP = client.query(q.Create(q.Collection('forecast'), { data }));
+  createP.then(r => {
+    console.log(r);
+  });
 }
 
-export async function getFromCache({ key }) {
-  await storage.init({ dir: os.homedir() });
-  return storage.getItem(key);
+export async function getFromCache() {
+  const x = q.Map(
+    q.Paginate(
+      q.Match(q.Index('forecast_sort_by_timestamp_desc')),
+      { size: 1 },
+      q.Lambda(['timestamp', 'ref'], q.Get(q.Var('ref'))),
+    ),
+  );
+  x.then(r => console.log(r));
 }
