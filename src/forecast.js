@@ -7,11 +7,7 @@ const { getFromCache, saveToCache } = require('./services/cache.js');
 
 dotenv.config();
 
-async function getFromCacheIfFresh({
-  client,
-  lastResponseKey,
-  maxFreshnessInterval,
-}) {
+async function getFromCacheIfFresh({ client, maxFreshnessInterval }) {
   const lastResponse = await getFromCache(client, faunadb.query);
   if (lastResponse && lastResponse.currently && lastResponse.currently.time) {
     // Get last response's date from UNIX timestamp
@@ -34,7 +30,6 @@ exports.handler = async function (event, _context) {
     // Try to get a fresh cached result
     const lastResponse = await getFromCacheIfFresh({
       client,
-      lastResponseKey,
       maxFreshnessInterval,
     });
     if (lastResponse) {
