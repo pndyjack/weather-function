@@ -1,13 +1,18 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable import/prefer-default-export */
-import dotenv from 'dotenv';
-import { fetchFreshResult } from './services/weather';
-import { getFromCache, saveToCache } from './services/cache';
+const dotenv = require('dotenv');
+const faunadb = require('faunadb');
+const { fetchFreshResult } = require('./services/weather.js');
+const { getFromCache, saveToCache } = require('./services/cache.js');
 
 dotenv.config();
 
-async function getFromCacheIfFresh({ lastResponseKey, maxFreshnessInterval }) {
-  const lastResponse = await getFromCache(process.env.FAUNA_DB_KEY);
+async function getFromCacheIfFresh({
+  client,
+  lastResponseKey,
+  maxFreshnessInterval,
+}) {
+  const lastResponse = await getFromCache(client, faunadb.query);
   if (lastResponse && lastResponse.currently && lastResponse.currently.time) {
     // Get last response's date from UNIX timestamp
     const lastRespDate = new Date(lastResponse.currently.time * 1000);
@@ -19,13 +24,16 @@ async function getFromCacheIfFresh({ lastResponseKey, maxFreshnessInterval }) {
   return lastResponse;
 }
 
-export async function handler(event, _context) {
+exports.handler = async function (event, _context) {
   try {
+    const client = new faunadb.Client({ secret: process.env.FAUNA_DB_KEY });
+
     const lastResponseKey = 'lastResponse';
     const maxFreshnessInterval = 87000;
 
     // Try to get a fresh cached result
     const lastResponse = await getFromCacheIfFresh({
+      client,
       lastResponseKey,
       maxFreshnessInterval,
     });
@@ -43,7 +51,7 @@ export async function handler(event, _context) {
     const data = await fetchFreshResult({ lat, long });
 
     // Save to cache
-    await saveToCache(data, process.env.FAUNA_DB_KEY);
+    await saveToCache(data, client, faunadb.query);
 
     return {
       statusCode: 200,
@@ -57,4 +65,4 @@ export async function handler(event, _context) {
       body: JSON.stringify(err),
     };
   }
-}
+};
